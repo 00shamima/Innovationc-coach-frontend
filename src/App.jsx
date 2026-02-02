@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { GoogleOAuthProvider } from '@react-oauth/google'; 
 import Home from "./Pages/Home";
 import Login from "./Pages/Login";
@@ -22,9 +22,11 @@ const ProtectedRoute = ({ children }) => {
 const Layout = ({ children }) => {
   const location = useLocation();
   
-  const hideNavbar = ["/login", "/register", "/login-success", "/reset-password"].includes(location.pathname);
+  const hideNavbar = ["/login", "/register", "/login-success", "/reset-password"].some(path => 
+    location.pathname.includes(path)
+  );
   
-  const isMessagesPage = location.pathname === "/messages";
+  const isMessagesPage = location.pathname.includes("/messages");
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-gray-50">
@@ -44,7 +46,7 @@ function App() {
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <BrowserRouter>
+      <Router>
         <Layout>
           <Routes>
             <Route path="/login" element={<Login />} /> 
@@ -63,7 +65,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Layout>
-      </BrowserRouter>
+      </Router>
     </GoogleOAuthProvider>
   );
 }
