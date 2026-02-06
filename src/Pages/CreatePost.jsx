@@ -11,40 +11,58 @@ const CreatePost = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Theme Colors
   const MAROON = "#4A0404";
   const GOLD = "#D4AF37";
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) { 
-      setMediaFile(file); 
-      setPreview(URL.createObjectURL(file)); 
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File is too large! Please select under 5MB.");
+        return;
+      }
+      setMediaFile(file);
+      setPreview(URL.createObjectURL(file));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!title.trim() || !content.trim()) {
+        return alert("Please fill in both title and description.");
+    }
+
     setLoading(true);
+
     const formData = new FormData();
-    formData.append('title', title); 
+    formData.append('title', title);
     formData.append('content', content);
-    if (mediaFile) formData.append('media', mediaFile);
+    
+    if (mediaFile) {
+      formData.append('media', mediaFile);
+    }
 
     try {
-      await API.post('/posts/create', formData);
-      alert("Post Created Successfully! "); 
-      navigate('/'); 
-    } catch (err) { 
-      alert("Error creating post."); 
-    } finally { 
-      setLoading(false); 
+      const response = await API.post('/posts/create', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 201 || response.status === 200) {
+        alert("Idea submitted successfully! Waiting for admin approval.");
+        navigate('/'); 
+      }
+    } catch (err) {
+      console.error("Upload Error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Something went wrong while posting.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#F5F1EB] py-6 px-4">
-      {/* Back Button Container */}
       <div className="max-w-2xl mx-auto mb-4">
         <button 
           onClick={() => navigate(-1)} 
@@ -60,7 +78,6 @@ const CreatePost = () => {
       </div>
 
       <div className="max-w-2xl mx-auto p-8 bg-white rounded-[1.5rem] shadow-xl border border-[#E3D9CC]">
-        {/* Header with Icon */}
         <div className="flex items-center gap-3 mb-6">
            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: MAROON }}>
               <ImageIcon size={20} style={{ color: GOLD }} />
@@ -105,18 +122,25 @@ const CreatePost = () => {
             <label className="flex items-center gap-2 cursor-pointer bg-white border-2 px-5 py-3 rounded-xl hover:bg-gray-50 transition font-bold text-xs uppercase tracking-widest shadow-sm" style={{ color: MAROON, borderColor: '#E3D9CC' }}>
               <ImageIcon size={16} /> 
               <span>{mediaFile ? "Change Image" : "Attach Visual"}</span>
-              <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleFileChange} 
+              />
             </label>
             
             <p className="text-[10px] font-bold text-gray-400 uppercase">Max size: 5MB</p>
           </div>
 
+          {/* Submit Button */}
           <button 
             type="submit" 
             disabled={loading} 
             className="text-white font-black py-4 rounded-xl w-full transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-3 uppercase tracking-[0.2em] text-sm"
             style={{ 
               backgroundColor: loading ? '#D8CFC4' : MAROON,
+              cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
             {loading ? (
